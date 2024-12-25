@@ -61,7 +61,7 @@ jobs:
       id: init
       if: ${{ steps.list_files.exit_code == 0 }}
       run: |
-        terraform init && terraform validate && terraform fmt
+        terraform init -reconfigure && terraform validate && terraform fmt
 
     - name: Perform Terraform Plan
       if: ${{ steps.init.exit_code == 0 && env.TERRAFORM_DESTROY == 'NO' }}
