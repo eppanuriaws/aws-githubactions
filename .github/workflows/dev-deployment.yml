@@ -61,7 +61,6 @@ jobs:
       id: init
       if: ${{ steps.list_files.exit_code == 0 }}
       run: |
-        rm -rf 1.prod-provider.tf
         terraform init && terraform validate && terraform fmt
 
     - name: Perform Terraform Plan
