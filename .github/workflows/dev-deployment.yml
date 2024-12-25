@@ -1,0 +1,82 @@
+ 
+name: Workflow For Infra Deployment To Development Environment
+
+#you may only define one of `branches` and `branches-ignore` for a single event.
+on: 
+  push:
+    branches:
+      - development
+      - master
+      - 'releases/**'
+  pull_request:
+    branches-ignore:
+      - main
+      - 'releases/**-alpha'
+
+env:
+  TERRAFORM_DESTROY: "YES"
+  ENVIRONMENT: "Dev"
+  AWS_ACCESS_KEY: ${{secrets.AWS_ACCESS_KEY}}
+  AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+  ACTIONS_STEP_DEBUG: true
+
+jobs:
+  dev-deployment:
+    if: github.ref == 'refs/heads/development'
+    runs-on: ubuntu-latest
+    #runs-on: [self-hosted, B41, terraform]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Print Runner Hostname
+      run: hostname
+      shell: bash
+
+    - name: Print Runner IP Address
+      run: curl -sL https://ipconfig.io
+      shell: bash
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v1
+      with:
+        terraform_version: 1.9.5
+
+    - name: List Repo Files
+      id: list_files
+      run: |
+       ls -al
+       pwd
+       free
+       terraform version
+       #megastar
+
+    # - name: Checkov GitHub Action
+    #   uses: bridgecrewio/checkov-action@v12
+    #   with:
+    #     output_format: cli,sarif
+    #     output_file_path: console,results.sarif
+
+    - name: Terraform Initialize
+      id: init
+      if: ${{ steps.list_files.exit_code == 0 }}
+      run: |
+        rm -rf 1.prod-provider.tf
+        terraform init && terraform validate && terraform fmt
+
+    - name: Perform Terraform Plan
+      if: ${{ steps.init.exit_code == 0 && env.TERRAFORM_DESTROY == 'NO' }}
+      id: plan
+      shell: bash
+      run: |
+       terraform plan --var-file 16.dev.tfvars
+
+    - name: Terraform Apply
+      if: ${{ steps.plan.exit_code == 0 && env.TERRAFORM_DESTROY == 'NO' }}
+      id: apply
+      run: terraform apply --auto-approve --var-file 16.dev.tfvars
+
+    - name: Terraform Destroy
+      id: destroy
+      run: terraform destroy --auto-approve --var-file 16.dev.tfvars
+      if: env.TERRAFORM_DESTROY == 'YES'
