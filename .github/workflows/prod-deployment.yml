@@ -1,4 +1,3 @@
- 
 name: Workflow For Infra Deployment To Development Environment
 
 #you may only define one of `branches` and `branches-ignore` for a single event.
@@ -12,17 +11,14 @@ on:
     branches-ignore:
       - main
       - 'releases/**-alpha'
-
 env:
   TERRAFORM_DESTROY: "YES"
   ENVIRONMENT: "Dev"
-  AWS_ACCESS_KEY: ${{secrets.AWS_ACCESS_KEY}}
-  AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
   ACTIONS_STEP_DEBUG: true
 
 jobs:
   dev-deployment:
-    if: github.ref == 'refs/heads/production'
+    if: github.ref == 'refs/heads/development'
     runs-on: ubuntu-latest
     #runs-on: [self-hosted, B41, terraform]
     steps:
@@ -40,7 +36,7 @@ jobs:
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v1
       with:
-        terraform_version: 1.9.5
+        terraform_version: 1.9.5 
 
     - name: List Repo Files
       id: list_files
@@ -57,12 +53,17 @@ jobs:
     #     output_format: cli,sarif
     #     output_file_path: console,results.sarif
 
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1  # Change to your AWS region
     - name: Terraform Initialize
       id: init
       if: ${{ steps.list_files.exit_code == 0 }}
       run: |
-        rm -rf 1.prod-provider.tf
-        terraform init && terraform validate && terraform fmt
+        terraform init -reconfigure && terraform validate && terraform fmt
 
     - name: Perform Terraform Plan
       if: ${{ steps.init.exit_code == 0 && env.TERRAFORM_DESTROY == 'NO' }}
@@ -75,7 +76,8 @@ jobs:
       if: ${{ steps.plan.exit_code == 0 && env.TERRAFORM_DESTROY == 'NO' }}
       id: apply
       run: terraform apply --auto-approve 
+
     - name: Terraform Destroy
       id: destroy
-      run: terraform destroy --auto-approve 
+      run: terraform destroy 
       if: env.TERRAFORM_DESTROY == 'YES'
