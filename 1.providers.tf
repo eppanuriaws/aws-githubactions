@@ -7,7 +7,7 @@ terraform {
     }
   }
   backend "s3" {
-    bucket = "devsecopsb42-terraform-state"
+    bucket = "devsecopsb42-terraform-state-new"
     key    = "devsecopsb42.tfstate"
     region = "us-east-1"
     # Replace this with your DynamoDB table name!
