@@ -41,10 +41,7 @@ jobs:
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v1
       with:
-        terraform_version: 1.9.5
-
-    - name: Debug STS Identity
-      run: aws sts get-caller-identity    
+        terraform_version: 1.9.5 
 
     - name: List Repo Files
       id: list_files
