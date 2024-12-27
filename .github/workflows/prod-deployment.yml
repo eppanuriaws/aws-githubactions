@@ -74,8 +74,7 @@ jobs:
     - name: Terraform Apply
       if: ${{ steps.plan.exit_code == 0 && env.TERRAFORM_DESTROY == 'NO' }}
       id: apply
-      run: terraform apply --auto-approve --var-file 16.dev.tfvars
-
+      run: terraform apply --auto-approve 
     - name: Terraform Destroy
       id: destroy
       run: terraform destroy --auto-approve 
